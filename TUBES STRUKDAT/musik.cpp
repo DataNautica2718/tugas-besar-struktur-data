@@ -1,4 +1,3 @@
-// musik.cpp (diperbarui)
 #include "musik.h"
 #include <iostream>
 #include <thread>
@@ -10,12 +9,12 @@
 
 using namespace std;
 
-vector<User*> users;  // Ubah dari array
+vector<User*> users;
 int userCount = 0;
 atomic<bool> isPaused(false);
 atomic<bool> stopPlaying(false);
 
-// --- ADMIN ---
+// ADMIN
 void createSongList(SongList &L) { L.first = L.last = nullptr; }
 
 SongPtr createSong(string id, string title, string genre, string artist, int duration) {
@@ -45,12 +44,12 @@ void printAllSongs(const SongList &L) {
     SongPtr p = L.first; 
     if (!p) { cout << "Library kosong.\n"; return; }
     int i = 1;
-    cout << "===== Library =====\n";
+    cout << "================== Library ==================\n";
     while (p) { 
         cout << i++ << ". " << p->info.id << " | " << p->info.title << " | " << p->info.genre << " | " << p->info.artist << " | " << p->info.duration << "s\n"; 
         p = p->next;
     }
-    cout << "---------------------\n";
+    cout << "---------------------------------------------\n";
 }
 
 void editSong(SongList &L) {
@@ -127,25 +126,7 @@ void removeSongFromAllUsersPlaylists(const string &id) {
     }
 }
 
-// --- BST ---
-void insertBST(adrBST &root, SongPtr s) {
-    if (searchBST(root, s->info.id)) {
-        cout << "ID lagu sudah ada di BST, tidak bisa ditambahkan\n";
-        return;
-    }
-    if (!root) { root = new BSTNode{s, nullptr, nullptr}; return; }
-    if (s->info.id < root->song->info.id) insertBST(root->left, s);
-    else if (s->info.id > root->song->info.id) insertBST(root->right, s);
-}
-
-SongPtr searchBST(adrBST root, string id) {
-    if (!root) return nullptr;
-    if (root->song->info.id == id) return root->song;
-    if (id < root->song->info.id) return searchBST(root->left, id);
-    return searchBST(root->right, id);
-}
-
-// --- USER ---
+// USER
 void createUser(string username, string favGenres[], int count) {
     if (userCount >= maxUser) { cout << "User penuh\n"; return; }
     User* newUser = new User;
@@ -180,7 +161,6 @@ User* findUser(string username) {
 void deleteUser(string username) {
     for (int i = 0; i < userCount; i++) {
         if (users[i]->username == username) {
-            // Clean up playlists, history, etc.
             for (int j = 0; j < users[i]->playlistCount; j++) {
                 adrPlaylist p = users[i]->playlists[j].first;
                 while (p) {
@@ -195,8 +175,8 @@ void deleteUser(string username) {
                 h = h->next;
                 delete temp;
             }
-            delete users[i];  // Delete pointer
-            users.erase(users.begin() + i);  // Remove from vector
+            delete users[i];
+            users.erase(users.begin() + i);
             userCount--;
             cout << "User '" << username << "' dihapus\n";
             return;
@@ -277,7 +257,7 @@ void printPlaylist(const Playlist &Q) {
     while (p) { cout << i++ << ". " << p->song->info.id << " | " << p->song->info.title << " - " << p->song->info.artist << "\n"; p = p->next; }
 }
 
-// --- HISTORY ---
+// HISTORY
 void initHistory(HistoryStack &S) { S.top = nullptr; }
 
 void pushHistory(HistoryStack &S, SongPtr s) { S.top = new HistoryNode{s, S.top}; }
@@ -286,155 +266,13 @@ SongPtr popHistory(HistoryStack &S) {
     SongPtr s = S.top->song; adrHistory n = S.top; S.top = S.top->next; delete n; return s;
 }
 
-void playNextUser(User &u, SongList &L) {
-    if (u.isPlaying) stopTimer(u);
-    if (u.activePlaylist == -1 ||
-        !u.playlists[u.activePlaylist].first) {
-        cout << "Playlist kosong\n";
-        return;
-    }
-
-    if (!u.currentPlaylistNode) {
-        u.currentPlaylistNode = u.playlists[u.activePlaylist].first;
-    }
-
-    u.currentSong = u.currentPlaylistNode->song;
-    pushHistory(u.history, u.currentSong);
-
-    u.fromPlaylist = true;
-    u.fromLibrary = false;
-    u.fromSearch = false;
-
-    startTimer(u, L);
-
-    cout << "Now playing: "
-         << u.currentSong->info.title << " - "
-         << u.currentSong->info.artist << "\n";
-}
-
-void pauseSong(User &u) { if (u.currentSong) { u.pauseFlag = true; cout << "Paused\n"; } }
-void resumeSong(User &u) { if (u.currentSong && u.pauseFlag) { u.pauseFlag = false; cout << "Resumed\n"; } }
-
-void playFromLibrary(User &u, SongPtr p, SongList &L) {
-    if (!p) { cout << "Lagu tidak ditemukan\n"; return; }
-    u.currentSong = p;
-    pushHistory(u.history, p);
-
-    u.currentPlaylistNode = nullptr;   // penting
-    u.fromPlaylist = false;
-    u.fromLibrary = true;
-    u.fromSearch = false;
-
-    startTimer(u, L);                     // mulai timer
-    cout << "Now playing: " << p->info.title << " - " << p->info.artist << "\n";
-}
-
 int searchByTitle(const SongList &L, string keyword, SongPtr hasil[]) {
     int count = 0; SongPtr p = L.first;
     while (p && count < 20) { if (p->info.title.find(keyword) != string::npos) hasil[count++] = p; p = p->next; }
     return count;
 }
 
-void playFromSearch(User &u, SongPtr s, SongList &L) {
-    if (!s) { cout << "Lagu tidak valid\n"; return; }
-    u.currentSong = s; pushHistory(u.history, s); updateGenreFavorite(u, s->info.genre);
-    u.fromPlaylist = false; u.fromLibrary = false; u.fromSearch = true; u.remainingTime = 0;
-    u.currentPlaylistNode = nullptr;
-    cout << "Now playing (Search): " << s->info.title << " - " << s->info.artist << "\n";
-    startTimer(u, L);
-}
-
-void playSong(User &u, SongPtr s, SongList &L) {
-    if (!s) { cout << "Lagu tidak valid\n"; return; }
-    u.currentSong = s;
-    pushHistory(u.history, s);
-    updateGenreFavorite(u, s->info.genre);
-    u.fromPlaylist = false;
-    u.fromLibrary = true;
-    u.fromSearch = false;
-    u.currentPlaylistNode = nullptr;
-    cout << "Now playing: " << s->info.title << " - " << s->info.artist << "\n";
-    startTimer(u, L);
-}
-
-void nextSong(User &u, SongList &L) {
-    if (!u.fromPlaylist || !u.currentPlaylistNode) {
-        cout << "Next tidak tersedia\n";
-        return;
-    }
-
-    if (!u.currentPlaylistNode->next) {
-        cout << "Sudah lagu terakhir playlist\n";
-        stopTimer(u);
-        return;
-    }
-
-    u.currentPlaylistNode = u.currentPlaylistNode->next;
-    u.currentSong = u.currentPlaylistNode->song;
-
-    pushHistory(u.history, u.currentSong);
-    startTimer(u, L);
-
-    cout << "Now playing: "
-         << u.currentSong->info.title << " - "
-         << u.currentSong->info.artist << "\n";
-}
-
-// Timer function
-void timerFunction(User* u, SongList &L) {
-    while (u->isPlaying && !u->stopFlag) {
-        if (!u->pauseFlag && u->remainingTime > 0) {
-            this_thread::sleep_for(chrono::seconds(1));
-            u->remainingTime--;
-
-            cout << "\rSisa waktu: " << u->remainingTime << " detik" << flush;
-
-            if (u->remainingTime == 0) {
-                if (u->fromPlaylist && u->currentPlaylistNode && u->currentPlaylistNode->next) {
-                    nextSong(*u, L);
-                } else {
-                    string genre = u->currentSong->info.genre;
-                    SongPtr next = getNextSongByGenre(L, u->currentSong, genre);
-                    if (next) {
-                        u->currentSong = next;
-                        pushHistory(u->history, next);
-                        startTimer(*u, L);  // pass library
-                        cout << "\nAuto next: " << next->info.title << " - " << next->info.artist << "\n";
-                    } else {
-                        u->isPlaying = false;
-                        u->stopFlag = true;
-                        cout << "\nLagu selesai, tidak ada next\n";
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Start Timer
-void startTimer(User &u, SongList &L) {
-    stopTimer(u);
-    if (!u.currentSong) return;
-    u.stopFlag = false;
-    u.isPlaying = true;
-    u.remainingTime = u.currentSong->info.duration;
-    u.timerThread = thread(timerFunction, &u, ref(L));
-}
-
-// Stop Timer
-void stopTimer(User &u) {
-    u.stopFlag = true;
-    u.pauseFlag = false;
-    u.isPlaying = false;
-
-    if (u.timerThread.joinable() &&
-        u.timerThread.get_id() != this_thread::get_id()) {
-        u.timerThread.join();
-    }
-}
-
-
-// --- FAVORITE ---
+// FAVORITE
 void addFavoriteToUser(User &u, SongPtr s) {
     if (u.favCount >= maxFav) {
         cout << "Favorite penuh\n";
@@ -457,15 +295,8 @@ void printUserFavorites(const User &u) {
     }
 }
 
-void playFavorite(User &u, int index, SongList &L) {
-    if (index < 1 || index > u.favCount) {
-        cout << "Index tidak valid\n";
-        return;
-    }
-    playSong(u, u.favorites[index - 1],L);
-}
 
-// --- HISTORY CLEAN ---
+// HISTORY
 void printHistory(const HistoryStack &H) {
     if (!H.top) {
         cout << "History kosong\n";
@@ -495,28 +326,6 @@ SongPtr getHistoryByIndex(const HistoryStack &H, int index) {
     return nullptr;
 }
 
-void playFromHistory(User &u, int index, SongList &L) {
-    SongPtr s = getHistoryByIndex(u.history, index);
-    if (!s) {
-        cout << "Index history tidak valid\n";
-        return;
-    }
-
-    // Reset konteks
-    u.currentPlaylistNode = nullptr;
-    u.fromPlaylist = false;
-    u.fromLibrary = false;
-    u.fromSearch = false;
-
-    u.currentSong = s;
-    pushHistory(u.history, s);  // masuk lagi ke history
-    startTimer(u, L);
-
-    cout << "Now playing (History): "
-         << s->info.title << " - "
-         << s->info.artist << "\n";
-}
-
 void removeFromHistory(HistoryStack &H, const string &id) {
     adrHistory cur = H.top, prev = nullptr;
     while (cur) {
@@ -537,129 +346,7 @@ void removeFromHistory(HistoryStack &H, const string &id) {
     }
 }
 
-// --- GENRE FAVORITE ---
-void updateGenreFavorite(User &u, const string &genre) {
-    for (int i = 0; i < u.favGenreCount; i++)
-        if (u.favGenres[i] == genre)
-            return;
-
-    if (u.favGenreCount < maxGenre) {
-        u.favGenres[u.favGenreCount++] = genre;
-    }
-}
-
-void prevSong(User &u, SongList &L) {
-    if (!u.fromPlaylist || !u.currentPlaylistNode) {
-        cout << "Previous tidak tersedia\n";
-        return;
-    }
-
-    if (!u.currentPlaylistNode->prev) {
-        cout << "Sudah lagu pertama playlist\n";
-        return;
-    }
-
-    u.currentPlaylistNode = u.currentPlaylistNode->prev;
-    u.currentSong = u.currentPlaylistNode->song;
-
-    pushHistory(u.history, u.currentSong);
-    startTimer(u, L);
-
-    cout << "Now playing (Previous): "
-         << u.currentSong->info.title << " - "
-         << u.currentSong->info.artist << "\n";
-}
-
-string getFavoriteGenre(User &u) {
-    if (u.favGenreCount == 0) return "";
-    string genre = u.favGenres[u.currentFavGenreIndex];
-    u.currentFavGenreIndex = (u.currentFavGenreIndex + 1) % u.favGenreCount;
-
-    return genre;
-}
-
-
-void showGenreRecommendation(const SongList &L, const string &genre) {
-    if (genre == "") {
-        cout << "Belum ada genre favorit\n";
-        return;
-    }
-    cout << "Rekomendasi genre [" << genre << "]:\n";
-    SongPtr p = L.first;
-    int i = 1;
-    while (p) {
-        if (p->info.genre == genre) {
-            cout << i++ << ". "
-                 << p->info.title << " - "
-                 << p->info.artist << "\n";
-        }
-        p = p->next;
-    }
-    if (i == 1) cout << "Tidak ada lagu sesuai genre\n";
-}
-
-void showNowPlaying(const User &u) {
-    if (!u.currentSong || !u.isPlaying) return;
-
-    cout << "\nNow Playing\n";
-    cout << u.currentSong->info.title
-         << " - "
-         << u.currentSong->info.artist << "\n";
-    cout << "-------------------------------------\n";
-    cout << "Sisa waktu: " << u.remainingTime << " detik\n";
-    cout << "-------------------------------------\n";
-    cout << "[prev] [pause] [next]\n";
-}
-
-// Thread input command
-void inputThread(User &u, SongList &L) {
-    string cmd;
-    while(u.isPlaying) {
-        if(cin.peek() > 0) {
-            cin >> cmd;
-            if(cmd=="pause") pauseSong(u);
-            else if(cmd=="resume") resumeSong(u);
-            else if(cmd=="next") {
-                if(u.fromPlaylist) nextSong(u, L);
-                else {
-                    string genre = u.currentSong->info.genre;
-                    SongPtr next = getNextSongByGenre(L, u.currentSong, genre);
-                    if(next) {
-                        stopTimer(u);
-                        u.currentSong = next;
-                        pushHistory(u.history, next);
-                        startTimer(u, L);
-                        cout << "\nNext: " << next->info.title << " - " << next->info.artist << "\n";
-                    } else cout << "\nTidak ada next\n";
-                }
-            }
-            else if(cmd=="prev") {
-                if(u.fromPlaylist) prevSong(u, L);
-                else {
-                    string genre = u.currentSong->info.genre;
-                    SongPtr prev = getPrevSongByGenre(L, u.currentSong, genre);
-                    if(prev) {
-                        stopTimer(u);
-                        u.currentSong = prev;
-                        pushHistory(u.history, prev);
-                        startTimer(u, L);
-                        cout << "\nPrev: " << prev->info.title << " - " << prev->info.artist << "\n";
-                    } else cout << "\nTidak ada prev\n";
-                }
-            }
-            else if(cmd=="addfav") addFavoriteToUser(u, u.currentSong);
-            else if(cmd=="addpl") {
-                showAndSelectPlaylist(u);
-                if(u.activePlaylist != -1) addSongToActivePlaylist(u, u.currentSong);
-                cout << "Lagu ditambahkan ke playlist aktif (jika ada).\n";
-            }
-            else if(cmd=="back") { stopTimer(u); break; }
-        }
-        this_thread::sleep_for(chrono::milliseconds(100));
-    }
-}
-
-// Start pemutaran
+// START PEMUTARAN
 void playSongWithInput(User &user, SongPtr song, SongList &library) {
     if (!song) return;
 
@@ -680,7 +367,7 @@ void playSongWithInput(User &user, SongPtr song, SongList &library) {
             user.remainingTime--;
             cout << "\rSisa waktu: " << user.remainingTime << " detik  " << flush;
 
-            if (user.remainingTime == 0) { // auto next
+            if (user.remainingTime == 0) {
                 if (user.fromPlaylist && user.currentPlaylistNode && user.currentPlaylistNode->next) {
                     user.currentPlaylistNode = user.currentPlaylistNode->next;
                     user.currentSong = user.currentPlaylistNode->song;
@@ -757,8 +444,6 @@ void playSongWithInput(User &user, SongPtr song, SongList &library) {
             }
         }
     }
-
-    // reset
     user.isPlaying = false;
     user.pauseFlag = false;
     user.stopFlag = false;
@@ -792,7 +477,7 @@ SongPtr getPrevSongByGenre(const SongList &L, SongPtr current, const string &gen
     return nullptr;
 }
 
-// --- EXIT ---
+// EXIT
 void handleExit(int) {
     cout << "\nProgram ditutup\n";
     exit(0);
