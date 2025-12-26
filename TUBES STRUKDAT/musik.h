@@ -1,4 +1,3 @@
-// musik.h (diperbarui)
 #ifndef MUSIK_H
 #define MUSIK_H
 
@@ -52,13 +51,6 @@ struct HistoryStack {
     adrHistory top;
 };
 
-struct BSTNode {
-    SongPtr song;
-    BSTNode *left;
-    BSTNode *right;
-};
-typedef BSTNode* adrBST;
-
 const int maxUser = 10;
 const int maxPlaylist = 10;
 const int maxFav = 50;
@@ -66,7 +58,7 @@ const int maxGenre = 3;
 
 struct User {
     string username;
-    adrPlaylist currentPlaylistNode;  // posisi lagu di playlist
+    adrPlaylist currentPlaylistNode;
     Playlist playlists[maxPlaylist];
     int playlistCount;
     int activePlaylist;
@@ -83,11 +75,10 @@ struct User {
     bool stopFlag;
     bool inPlayerMode;
     int remainingTime;
-    thread timerThread;
 };
 
-extern vector<User*> users;  // Ubah dari array ke vector
-extern int userCount;  // Tetap ada untuk count
+extern vector<User*> users;
+extern int userCount;
 
 // Admin
 void createSongList(SongList &L);
@@ -99,11 +90,7 @@ void deleteSong(SongList &L, string id);
 void removeSongFromAllPlaylists(Playlist &Q, const string &id);
 void removeSongFromAllUsersPlaylists(const string &id);
 
-// BST
-void insertBST(adrBST &root, SongPtr song);
-SongPtr searchBST(adrBST root, string id);
-
-// User / Playlist
+// User Playlist
 void createUser(string username, string favGenres[], int count);
 User* findUser(string username);
 void deleteUser(string username);
@@ -114,34 +101,17 @@ void removeSongFromPlaylists(Playlist &Q, string id);
 void printPlaylist(const Playlist &Q);
 void showAndSelectPlaylist(User &u);
 
-// History / Play
+// History Play
 void initHistory(HistoryStack &S);
 void pushHistory(HistoryStack &S, SongPtr song);
 void printHistory(const HistoryStack &H);
 SongPtr getHistoryByIndex(const HistoryStack &H, int index);
 SongPtr popHistory(HistoryStack &S);
-void playFromHistory(User &u, int index, SongList &L);
-void playNextUser(User &u, SongList &L);
-void pauseSong(User &u);
-void resumeSong(User &u);
-void playFromLibrary(User &u, SongPtr p);
 int searchByTitle(const SongList &L, string keyword, SongPtr hasil[]);
-void playFromSearch(User &u, SongPtr s, SongList &L);
-void playSong(User &u, SongPtr s, SongList &L);
-void showNowPlaying(const User &u);
-void nextSong(User &u, SongList &L);  // Ubah: hapus SongList &L
-void prevSong(User &u, SongList &L);  // Ubah: hapus SongList &L
-void startTimer(User &u, SongList &L);
-void stopTimer(User &u);
 
 // Favorite & Genre
 void addFavoriteToUser(User &u, SongPtr s);
 void printUserFavorites(const User &u);
-void playFavorite(User &u, int index, SongList &L);
-void updateGenreFavorite(User &u, const string &genre);
-string getFavoriteGenre(User &u);
-void showGenreRecommendation(const SongList &L, const string &genre);
-void inputThread(User &u, SongList &L);
 void playSongWithInput(User &u, SongPtr s, SongList &L);
 SongPtr getPrevSongByGenre(const SongList &L, SongPtr current, const string &genre);
 SongPtr getNextSongByGenre(const SongList &L, SongPtr current, const string &genre) ;
