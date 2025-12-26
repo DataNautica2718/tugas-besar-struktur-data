@@ -18,12 +18,11 @@ fitur yang berbeda.
 - Menambahkan lagu ke dalam library
 - Menampilkan seluruh lagu dalam library
 - Mengedit data lagu (judul, genre, artis, durasi)
-- Menghapus lagu dari library (Penghapusan lagu otomatis
-  tersinkronisasi ke seluruh playlist pengguna)
+- Menghapus lagu dari library (Penghapusan lagu otomatis tersinkronisasi ke seluruh playlist pengguna)
 ### Fitur User
-- Mencari lagu berdasarkan ID atau judul (menggunakan Binary Search Tree)
+- Mencari lagu berdasarkan judul
 - Memutar, menjeda, dan melanjutkan lagu
-- Navigasi lagu next dan previous
+- Navigasi lagu next, previous, pause, resume
 - Membuat dan mengelola playlist
 - Menampilkan isi playlist
 - Melihat dan memutar ulang lagu dari history
@@ -33,9 +32,6 @@ fitur yang berbeda.
 ## Struktur Data yang Digunakan
 - **Doubly Linked List (DLL)**  
   Digunakan untuk menyimpan library lagu dan playlist pengguna, serta mendukung navigasi next dan previous.
-
-- **Binary Search Tree (BST)**  
-  Digunakan untuk mempercepat pencarian lagu berdasarkan ID atau judul lagu.
 
 - **Stack**  
   Digunakan untuk menyimpan riwayat lagu yang telah diputar dengan konsep LIFO (Last In First Out).
