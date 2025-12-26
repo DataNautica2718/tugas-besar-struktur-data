@@ -9,7 +9,6 @@ int main() {
     SongList library;
     createSongList(library);
 
-    // Tambah dummy 15 lagu
     insertSong(library, createSong("S001","Lagu1","Pop","Artis1",18));
     insertSong(library, createSong("S002","Lagu2","Jazz","Artis2",20));
     insertSong(library, createSong("S003","Lagu3","Rock","Artis3",21));
@@ -58,7 +57,7 @@ int main() {
                     cout << "Durasi (detik): "; cin >> dur;
                     insertSong(library, createSong(id,title,genre,artist,dur));
                 } else if(aChoice==2){
-                    editSong(library); // sesuaikan header & cpp
+                    editSong(library);
                 } else if(aChoice==3){
                     string id; cout << "ID lagu yang dihapus: "; cin >> id;
                     deleteSong(library,id);
@@ -92,7 +91,6 @@ int main() {
                 int uChoice; cin >> uChoice;
                 if(uChoice==0) break;
 
-                // LIBRARY
                 if(uChoice==1){
                     printAllSongs(library);
                     int pilih; cout << "Pilih lagu (0 back): "; cin >> pilih;
@@ -102,7 +100,7 @@ int main() {
                         playSongWithInput(*u,p,library);
                     }
                 }
-                // SEARCH
+            
                 else if(uChoice==2){
                     string keyword; cout << "Masukkan keyword: "; cin >> keyword;
                     SongPtr hasil[20]; int count = searchByTitle(library, keyword, hasil);
@@ -112,7 +110,7 @@ int main() {
                     if(pilih>0 && pilih<=count)
                         playSongWithInput(*u, hasil[pilih-1], library);
                 }
-                // PLAYLIST
+                
                 else if(uChoice==3){
                     while(true){
                         cout << "\n--- PLAYLIST MENU ---\n1. Buat playlist\n2. Lihat playlist\n0. Back\nPilihan: " << endl;
@@ -165,7 +163,7 @@ int main() {
                         }
                     }
                 }
-                // FAVORITE
+                
                 else if(uChoice==4){
                     if (u->favCount == 0){
                         cout << "Favorite kosong\n";
@@ -257,13 +255,13 @@ int main() {
                     }
                     
                 }
-                // HISTORY
+                
                 else if(uChoice==5){
                     printHistory(u->history);
                     int pilih; cout << "Pilih lagu play (0 back): "; cin >> pilih;
                     if(pilih>0) playSongWithInput(*u,getHistoryByIndex(u->history,pilih),library);
                 }
-                // USER MANAGEMENT
+                
                 else if(uChoice==6){
                     cout << "\n--- USER MANAGEMENT ---\n1. Hapus user\n0. Back\nPilihan: ";
                     int um; cin >> um;
